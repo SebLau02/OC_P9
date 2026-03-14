@@ -68,10 +68,7 @@ export const getBills = async (store) => {
   if (!store) return [];
 
   try {
-    const snapshot = await store
-      .bills()
-      .list()
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    const snapshot = await store.bills().list();
 
     const bills = snapshot.map((doc) => {
       try {
