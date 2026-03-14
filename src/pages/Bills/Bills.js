@@ -52,8 +52,8 @@ const handleClickIconEye = (icon, document) => {
       );
       modaleFile.querySelector(".modal-body").innerHTML =
         `<div style='text-align: center;' class="bill-proof-container">
-        <img width=${imgWidth} src=${billUrl} alt="Bill" />
-      </div>`;
+          <img width=${imgWidth} src=${billUrl} alt="Bill" data-testid="bill-proof-image" />
+        </div>`;
     },
     { once: true },
   );
