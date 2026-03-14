@@ -11,7 +11,7 @@ const mockedBills = {
         commentary: "séminaire billed",
         name: "encore",
         fileName: "preview-facture-free-201801-pdf-1.jpg",
-        date: "2004-04-04",
+        date: "Not valid date format",
         amount: 400,
         commentAdmin: "ok",
         email: "a@a",

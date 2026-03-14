@@ -10,10 +10,30 @@ import { localStorageMock } from "../__mocks__/localStorage.js";
 
 import router from "../app/Router.js";
 import userEvent from "@testing-library/user-event";
-import { initBillsPage } from "../pages/Bills/Bills.js";
+import { getBills, initBillsPage } from "../pages/Bills/Bills.js";
+import store from "../__mocks__/store.js";
+import storeError from "../__mocks__/store_error.js";
 
 describe("Given I am connected as an employee", () => {
   describe("When I am on Bills Page", () => {
+    test("Expect data is empty Array when store null", async () => {
+      const data = await getBills(null);
+      expect(data).toEqual([]);
+    });
+    test("Expect data is empty Array when store undefined", async () => {
+      const data = await getBills(undefined);
+      expect(data).toEqual([]);
+    });
+    test("Expect page render elements with correct date", async () => {
+      const snapshot = await getBills(store);
+      expect(snapshot).toBeTruthy();
+    });
+    test("Expect page render elements with date not formated", async () => {
+      const snapshot = await getBills(storeError);
+      expect(snapshot).toBeTruthy();
+      expect(snapshot[0].date).toBe("Not valid date format");
+    });
+
     test("Then bill icon in vertical layout should be highlighted", async () => {
       Object.defineProperty(window, "localStorage", {
         value: localStorageMock,
