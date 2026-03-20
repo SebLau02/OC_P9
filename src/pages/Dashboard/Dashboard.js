@@ -137,9 +137,11 @@ export const handleClickIconEye = (document) => {
   modale.addEventListener(
     "shown.bs.modal",
     () => {
-      const imgWidth = Math.floor(modale.getBoundingClientRect().width * 0.8);
+      const imgWidth = Math.floor(
+        modale.querySelector(".modal-body").getBoundingClientRect().width * 0.9,
+      );
       modale.querySelector(".modal-body").innerHTML =
-        `<div style='text-align: center;'><img width=${imgWidth} src=${billUrl} alt="Bill"/></div>`;
+        `<div style='text-align: center;'><img width=${imgWidth} src=${billUrl} alt="Bill" data-testid="bill-proof-image" /></div>`;
     },
     { once: true },
   );

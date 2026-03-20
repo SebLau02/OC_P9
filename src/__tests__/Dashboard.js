@@ -17,6 +17,8 @@ import {
   handleClickIconEye,
   resetDashboardState,
   card,
+  getBillsAllUsers,
+  updateBill,
 } from "../pages/Dashboard/Dashboard.js";
 import { ROUTES, ROUTES_PATH } from "../constants/routes";
 import { localStorageMock } from "../__mocks__/localStorage.js";
@@ -43,6 +45,31 @@ const setupLocalStorage = () => {
 };
 
 describe("Given I am connected as an Admin", () => {
+  describe("On loading Dashboard page", () => {
+    test("It should fetch bills from the store", async () => {
+      const storedBills = await getBillsAllUsers(mockStore);
+      const bill = bills[0];
+      const storedBill = storedBills[0];
+      expect(storedBills.length).toBe(bills.length);
+      expect(storedBill.id).toBe(bill.id);
+    });
+    test("It should return empty Array when fetching from null store", async () => {
+      const storedBills = await getBillsAllUsers(null);
+      expect(storedBills.length).toBe(0);
+    });
+  });
+  describe("When I submited form", () => {
+    test("It should update store", async () => {
+      const updatedBill = { ...bills[0], commentAdmin: "Changed" };
+      const updatedStoredBill = await updateBill(updatedBill, mockStore);
+      expect(updatedStoredBill.commentAdmin).toBe("Changed");
+    });
+    test("It should throw an error when updating with incomplete bill data", async () => {
+      const updatedBill = { ...bills[0], commentAdmin: "Changed" };
+      const { id, ...restBill } = updatedBill;
+      await expect(updateBill(restBill, mockStore)).rejects.toThrow("Error");
+    });
+  });
   describe("When I am on Dashboard page", () => {
     // Fais par moi
     test("Then, each card should render with the part before the @ in the email as the name", () => {
@@ -106,7 +133,7 @@ describe("Given I am connected as an Admin", () => {
       expect(consoleSpy).toHaveBeenCalledWith("Dashboard: document is MISSING");
       consoleSpy.mockRestore();
     });
-    test("Then, pending bills should be rendre on click on pending icon", () => {
+    test("Then, pending bills should be render on click on pending icon", () => {
       document.body.innerHTML = DashboardUI({ data: { bills } });
 
       initDashboardPage({
@@ -121,7 +148,7 @@ describe("Given I am connected as an Admin", () => {
       const ticketName = screen.getByText("encore");
       expect(ticketName).toBeTruthy();
     });
-    test("Then, accepted bills should be rendre on click on accepted icon", () => {
+    test("Then, accepted bills should be render on click on accepted icon", () => {
       document.body.innerHTML = DashboardUI({ data: { bills } });
 
       initDashboardPage({
@@ -136,7 +163,7 @@ describe("Given I am connected as an Admin", () => {
       const ticketName = screen.getByText("test3");
       expect(ticketName).toBeTruthy();
     });
-    test("Then, refused bills should be rendre on click on refused icon", () => {
+    test("Then, refused bills should be render on click on refused icon", () => {
       document.body.innerHTML = DashboardUI({ data: { bills } });
 
       initDashboardPage({
@@ -150,6 +177,22 @@ describe("Given I am connected as an Admin", () => {
       userEvent.click(icon);
       const ticketName = screen.getByText("test1");
       expect(ticketName).toBeTruthy();
+    });
+    test("Then, i can toggle bills side menu", () => {
+      document.body.innerHTML = DashboardUI({ data: { bills } });
+
+      initDashboardPage({
+        document,
+        onNavigate,
+        bills,
+        localStorage: localStorageMock,
+      });
+      const icon1 = screen.getByTestId("arrow-icon1");
+      expect(icon1).toBeTruthy();
+      userEvent.click(icon1);
+      expect(icon1.style.transform).toBe("rotate(0deg)");
+      userEvent.click(icon1);
+      expect(icon1.style.transform).toBe("rotate(90deg)");
     });
   });
   // Fin Fais par moi
@@ -227,7 +270,7 @@ describe("Given I am connected as an Admin", () => {
   });
 
   describe("When I am on Dashboard page and I click on edit icon of a card", () => {
-    test("Then, right form should be filled", () => {
+    test("Then, i can add commmentary and accept the bill", () => {
       setupLocalStorage();
       resetDashboardState();
 
@@ -240,10 +283,89 @@ describe("Given I am connected as an Admin", () => {
       icon1.addEventListener("click", handleShowTickets1);
       userEvent.click(icon1);
       expect(handleShowTickets1).toHaveBeenCalled();
-      expect(screen.getByTestId(`open-bill47qAXb6fIm2zOKkLzMro`)).toBeTruthy();
-      const iconEdit = screen.getByTestId("open-bill47qAXb6fIm2zOKkLzMro");
+      expect(screen.getByTestId(`open-bill${bills[0].id}`)).toBeTruthy();
+      const iconEdit = screen.getByTestId(`open-bill${bills[0].id}`);
       userEvent.click(iconEdit);
       expect(screen.getByTestId(`dashboard-form`)).toBeTruthy();
+      const commentaryInput = screen.getByTestId("commentary2");
+      expect(commentaryInput).toBeTruthy();
+      fireEvent.change(commentaryInput, {
+        target: { value: "Mon commentaire" },
+      });
+      const acceptButton = screen.getByTestId("btn-accept-bill-d");
+      expect(acceptButton).toBeTruthy();
+      userEvent.click(acceptButton);
+      expect(commentaryInput.value).toBe("Mon commentaire");
+      expect(screen.queryByTestId("big-billed-icon")).toBeTruthy();
+    });
+    test("Then, i can add commmentary and refuse the bill", () => {
+      setupLocalStorage();
+      resetDashboardState();
+
+      document.body.innerHTML = DashboardUI({ data: { bills } });
+
+      const handleShowTickets1 = jest.fn((e) =>
+        handleShowTickets(e, bills, 1, document),
+      );
+      const icon1 = screen.getByTestId("arrow-icon1");
+      icon1.addEventListener("click", handleShowTickets1);
+      userEvent.click(icon1);
+      expect(handleShowTickets1).toHaveBeenCalled();
+      expect(screen.getByTestId(`open-bill${bills[0].id}`)).toBeTruthy();
+      const iconEdit = screen.getByTestId(`open-bill${bills[0].id}`);
+      userEvent.click(iconEdit);
+      expect(screen.getByTestId(`dashboard-form`)).toBeTruthy();
+      const commentaryInput = screen.getByTestId("commentary2");
+      expect(commentaryInput).toBeTruthy();
+      fireEvent.change(commentaryInput, {
+        target: { value: "Mon commentaire" },
+      });
+      const refuseButton = screen.getByTestId("btn-refuse-bill-d");
+      expect(refuseButton).toBeTruthy();
+      userEvent.click(refuseButton);
+      expect(commentaryInput.value).toBe("Mon commentaire");
+      expect(screen.queryByTestId("big-billed-icon")).toBeTruthy();
+    });
+    test("Then, modal should be open with attached file displayed on click on eye icon", async () => {
+      setupLocalStorage();
+      resetDashboardState();
+
+      document.body.innerHTML = DashboardUI({ data: { bills } });
+
+      const handleShowTickets1 = jest.fn((e) =>
+        handleShowTickets(e, bills, 1, document),
+      );
+      const icon1 = screen.getByTestId("arrow-icon1");
+      icon1.addEventListener("click", handleShowTickets1);
+      userEvent.click(icon1);
+      const iconEdit = screen.getByTestId("open-bill47qAXb6fIm2zOKkLzMro");
+      userEvent.click(iconEdit);
+      const eyeIcon = screen.getByTestId("icon-eye-d");
+      userEvent.click(eyeIcon);
+      const modal = screen.getByTestId("modaleFileAdmin");
+
+      modal.dispatchEvent(new Event("shown.bs.modal"));
+      const billUrl = eyeIcon.getAttribute("data-bill-url");
+      await waitFor(() => {
+        const img = screen.getByTestId("bill-proof-image");
+        expect(img).toBeTruthy();
+        expect(img.getAttribute("src")).toBe(billUrl);
+      });
+    });
+    test("Then, form should be submit on click on Accept button", async () => {
+      setupLocalStorage();
+      resetDashboardState();
+      document.body.innerHTML = DashboardFormUI(bills[0]);
+
+      const acceptButton = screen.getByTestId("btn-accept-bill-d");
+
+      acceptButton.addEventListener("click", (e) =>
+        handleAcceptSubmit(e, bills[0], document),
+      );
+      fireEvent.click(acceptButton);
+      const bigBilledIcon = screen.queryByTestId("big-billed-icon");
+      expect(bigBilledIcon).toBeTruthy();
+      expect(screen.getByTestId(`commentary2`)).toBeTruthy();
     });
   });
 
