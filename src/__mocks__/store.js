@@ -105,4 +105,10 @@ export default {
     return mockedBills;
     //return {}
   },
+  login(data) {
+    if (!data) {
+      throw new Error("Error");
+    }
+    return Promise.resolve({ jwt: "fake-jwt" });
+  },
 };

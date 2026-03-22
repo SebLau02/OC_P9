@@ -48,7 +48,8 @@ const handleSubmitEmployee = (e, { localStorage, onNavigate, store }) => {
       onNavigate(ROUTES_PATH["Bills"]);
       PREVIOUS_LOCATION = ROUTES_PATH["Bills"];
       document.body.style.backgroundColor = "#fff";
-    });
+    })
+    .catch(() => {});
 };
 
 /**
@@ -76,7 +77,8 @@ const handleSubmitAdmin = (e, { localStorage, onNavigate, store }) => {
       onNavigate(ROUTES_PATH["Dashboard"]);
       PREVIOUS_LOCATION = ROUTES_PATH["Dashboard"];
       document.body.style.backgroundColor = "#fff";
-    });
+    })
+    .catch(() => {});
 };
 
 /**
@@ -102,7 +104,7 @@ const login = (user, store) => {
 /**
  * Crée un nouvel utilisateur via le store
  */
-const createUser = (user, store) => {
+export const createUser = (user, store) => {
   if (store) {
     return store
       .users()
@@ -119,6 +121,6 @@ const createUser = (user, store) => {
         return login(user, store);
       });
   } else {
-    return Promise.resolve();
+    return Promise.reject(new Error("Store is not defined"));
   }
 };

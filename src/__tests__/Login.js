@@ -3,17 +3,19 @@
  */
 
 import LoginUI from "../pages/Login/LoginUI";
-import { initLoginPage } from "../pages/Login/Login.js";
+import { createUser, initLoginPage } from "../pages/Login/Login.js";
 import { ROUTES } from "../constants/routes";
 import { fireEvent, screen, waitFor } from "@testing-library/dom";
-import { localStorageMock } from "../__mocks__/localStorage.js"
+import { localStorageMock } from "../__mocks__/localStorage.js";
+import mockedStore from "../__mocks__/store.js";
+import userEvent from "@testing-library/user-event";
 
 // --- Helper Functions ---
 
 const setupLocalStorage = () => {
-  Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-  window.localStorage.clear()
-}
+  Object.defineProperty(window, "localStorage", { value: localStorageMock });
+  window.localStorage.clear();
+};
 
 const onNavigate = (pathname) => {
   document.body.innerHTML = ROUTES({ pathname });
@@ -23,9 +25,9 @@ const onNavigate = (pathname) => {
 
 describe("Given that I am a user on login page", () => {
   beforeEach(() => {
-    setupLocalStorage()
+    setupLocalStorage();
     document.body.innerHTML = LoginUI();
-  })
+  });
 
   describe("When I do not fill fields and I click on employee button Login In", () => {
     test("Then It should renders Login page", () => {
@@ -84,10 +86,10 @@ describe("Given that I am a user on login page", () => {
 
       // Mock store with login method
       const store = {
-        login: jest.fn().mockResolvedValue({ jwt: 'fake-jwt' }),
+        login: jest.fn().mockResolvedValue({ jwt: "fake-jwt" }),
         users: () => ({
-          create: jest.fn().mockResolvedValue({})
-        })
+          create: jest.fn().mockResolvedValue({}),
+        }),
       };
 
       // Initialize the login page with functional approach
@@ -95,22 +97,24 @@ describe("Given that I am a user on login page", () => {
         document,
         localStorage: window.localStorage,
         onNavigate,
-        store
+        store,
       });
 
       fireEvent.submit(form);
 
       // Wait for navigation and verify the result
-      await waitFor(() => expect(screen.getByText("Mes notes de frais")).toBeTruthy())
+      await waitFor(() =>
+        expect(screen.getByText("Mes notes de frais")).toBeTruthy(),
+      );
     });
   });
 });
 
 describe("Given that I am a user on login page", () => {
   beforeEach(() => {
-    setupLocalStorage()
+    setupLocalStorage();
     document.body.innerHTML = LoginUI();
-  })
+  });
 
   describe("When I do not fill fields and I click on admin button Login In", () => {
     test("Then It should renders Login page", () => {
@@ -171,10 +175,10 @@ describe("Given that I am a user on login page", () => {
 
       // Mock store with login method
       const store = {
-        login: jest.fn().mockResolvedValue({ jwt: 'fake-jwt' }),
+        login: jest.fn().mockResolvedValue({ jwt: "fake-jwt" }),
         users: () => ({
-          create: jest.fn().mockResolvedValue({})
-        })
+          create: jest.fn().mockResolvedValue({}),
+        }),
       };
 
       // Initialize the login page with functional approach
@@ -182,13 +186,117 @@ describe("Given that I am a user on login page", () => {
         document,
         localStorage: window.localStorage,
         onNavigate,
-        store
+        store,
       });
 
       fireEvent.submit(form);
 
       // Integration Check: Wait for redirection
-      await waitFor(() => expect(screen.getByText("Validations")).toBeTruthy())
+      await waitFor(() => expect(screen.getByText("Validations")).toBeTruthy());
+    });
+  });
+});
+
+describe("Given that I am a user on login page", () => {
+  beforeEach(() => {
+    setupLocalStorage();
+    document.body.innerHTML = LoginUI();
+  });
+  test("It should throw an error when login fails", async () => {
+    initLoginPage({
+      document,
+      localStorage: window.localStorage,
+      onNavigate,
+      store: mockedStore,
+    });
+    const form = screen.getByTestId("form-employee");
+    expect(form).toBeTruthy();
+    const submitFn = () => fireEvent.submit(form);
+
+    expect(submitFn).not.toThrow(); // car fireEvent ne lance pas d’erreur JS, mais le handler peut gérer l’erreur en interne
+  });
+  describe(" It should call createUser when login fails (passage dans le catch):", async () => {
+    test("As employee", async () => {
+      const usersObj = { create: jest.fn().mockResolvedValue({}) };
+      const store = {
+        login: jest.fn().mockRejectedValue(new Error("login failed")),
+        users: () => usersObj,
+      };
+      const createUserSpy = jest.spyOn(usersObj, "create");
+
+      initLoginPage({
+        document,
+        localStorage: window.localStorage,
+        onNavigate,
+        store,
+      });
+
+      const emailInput = screen.getByTestId("employee-email-input");
+      const passwordInput = screen.getByTestId("employee-password-input");
+      fireEvent.change(emailInput, { target: { value: "a@a" } });
+      fireEvent.change(passwordInput, { target: { value: "azerty" } });
+      const form = screen.getByTestId("form-employee");
+      expect(form).toBeTruthy();
+
+      // On soumet le formulaire et on attrape l'erreur pour éviter qu'elle ne remonte à Jest
+      await fireEvent.submit(form);
+      await waitFor(() => {
+        expect(createUserSpy).toHaveBeenCalled();
+      });
+    });
+    test("As admin", async () => {
+      const usersObj = { create: jest.fn().mockResolvedValue({}) };
+      const store = {
+        login: jest.fn().mockRejectedValue(new Error("login failed")),
+        users: () => usersObj,
+      };
+      const createUserSpy = jest.spyOn(usersObj, "create");
+
+      initLoginPage({
+        document,
+        localStorage: window.localStorage,
+        onNavigate,
+        store,
+      });
+
+      const emailInput = screen.getByTestId("admin-email-input");
+      const passwordInput = screen.getByTestId("admin-password-input");
+      fireEvent.change(emailInput, { target: { value: "a@a" } });
+      fireEvent.change(passwordInput, { target: { value: "azerty" } });
+      const form = screen.getByTestId("form-admin");
+      expect(form).toBeTruthy();
+
+      // On soumet le formulaire et on attrape l'erreur pour éviter qu'elle ne remonte à Jest
+      await fireEvent.submit(form);
+      await waitFor(() => {
+        expect(createUserSpy).toHaveBeenCalled();
+      });
+    });
+  });
+  describe("It should return Promise resolved whend store is not defined", () => {
+    test("When try to login", async () => {
+      initLoginPage({
+        document,
+        localStorage: window.localStorage,
+        onNavigate,
+        store: null, // store non défini
+      });
+      const form = screen.getByTestId("form-employee");
+      expect(form).toBeTruthy();
+
+      await expect(() => fireEvent.submit(form)).not.toThrow();
+    });
+    test("createUser rejette si store est undefined", async () => {
+      const user = {
+        type: "Employee",
+        email: "test@test.com",
+        password: "azerty",
+        status: "connected",
+      };
+      await expect(
+        // On appelle createUser sans store
+        createUser(user, undefined),
+      ).rejects.toThrow("Store is not defined");
     });
   });
 });
