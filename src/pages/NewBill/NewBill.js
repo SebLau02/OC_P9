@@ -36,7 +36,7 @@ export const initNewBillPage = ({
 /**
  * Gère le changement de fichier (upload)
  */
-const handleChangeFile = (e, { store, localStorage }) => {
+export const handleChangeFile = (e, { store, localStorage }) => {
   e.preventDefault();
 
   const fileInput = document.querySelector(`input[data-testid="file"]`);
@@ -110,7 +110,7 @@ const handleSubmit = (e, { onNavigate, store, localStorage }) => {
 /**
  * Met à jour la bill dans le store
  */
-const updateBill = (bill, { billId, store, onNavigate }) => {
+export const updateBill = (bill, { billId, store, onNavigate }) => {
   if (store) {
     store
       .bills()
@@ -125,10 +125,10 @@ const updateBill = (bill, { billId, store, onNavigate }) => {
 /**
  * Réinitialise l'état du fichier (utile pour les tests)
  */
-export const resetBillFileState = () => {
-  billFileState = {
-    fileUrl: null,
-    fileName: null,
-    billId: null,
-  };
-};
+// export const resetBillFileState = () => {
+//   billFileState = {
+//     fileUrl: null,
+//     fileName: null,
+//     billId: null,
+//   };
+// };
