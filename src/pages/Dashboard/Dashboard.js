@@ -301,7 +301,9 @@ export const handleShowTickets = (e, bills, index, document) => {
   }
 
   bills.forEach((bill) => {
-    const openBill = document.querySelector(`#open-bill${bill.id}`);
+    const openBill = document
+      .querySelector(`#status-bills-container${dashboardState.index}`)
+      .querySelector(`#open-bill${bill.id}`);
     if (openBill)
       openBill.addEventListener("click", (e) =>
         handleEditTicket(e, bill, bills, document),
