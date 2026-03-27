@@ -125,10 +125,10 @@ export const updateBill = (bill, { billId, store, onNavigate }) => {
 /**
  * Réinitialise l'état du fichier (utile pour les tests)
  */
-// export const resetBillFileState = () => {
-//   billFileState = {
-//     fileUrl: null,
-//     fileName: null,
-//     billId: null,
-//   };
-// };
+export const resetBillFileState = () => {
+  billFileState = {
+    fileUrl: null,
+    fileName: null,
+    billId: null,
+  };
+};

@@ -13,6 +13,7 @@ import {
 import { localStorageMock } from "../__mocks__/localStorage.js";
 import mockStore from "../__mocks__/store.js";
 import { bills } from "../fixtures/bills.js";
+import { ROUTES_PATH } from "../constants/routes.js";
 
 const setupLocalStorage = () => {
   Object.defineProperty(window, "localStorage", { value: localStorageMock });
@@ -201,5 +202,93 @@ describe("Given I am connected as an employee and I am on NewBill Page", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(console.error).toHaveBeenCalled();
+  });
+});
+
+// Test d'intégration POST NewBill
+describe("Given I am a user connected as Employee", () => {
+  describe("When I submit a new bill via the form", () => {
+    beforeEach(() => {
+      setupLocalStorage();
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({ type: "Employee", email: "employee@test.tld" }),
+      );
+      resetBillFileState();
+    });
+
+    test("Then a new bill is posted to mock API POST and I am redirected to Bills", async () => {
+      // Given
+      document.body.innerHTML = NewBillUI();
+      const onNavigate = jest.fn();
+      initNewBillPage({
+        document,
+        onNavigate,
+        store: mockStore,
+        localStorage: window.localStorage,
+      });
+
+      // When - fill form fields
+      fireEvent.change(screen.getByTestId("expense-type"), {
+        target: { value: "Transports" },
+      });
+      fireEvent.change(screen.getByTestId("expense-name"), {
+        target: { value: "Vol Paris-Lyon" },
+      });
+      fireEvent.change(screen.getByTestId("datepicker"), {
+        target: { value: "2024-01-15" },
+      });
+      fireEvent.change(screen.getByTestId("amount"), {
+        target: { value: "150" },
+      });
+      fireEvent.change(screen.getByTestId("vat"), { target: { value: "20" } });
+      fireEvent.change(screen.getByTestId("pct"), { target: { value: "20" } });
+
+      // Upload file (déclenche create sur l'API)
+      const fileInput = screen.getByTestId("file");
+      const file = new File(["content"], "ticket.png", { type: "image/png" });
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      // Attendre la résolution de create()
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Submit form (déclenche update sur l'API)
+      fireEvent.submit(screen.getByTestId("form-new-bill"));
+
+      // Attendre la résolution de update()
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Then - redirection vers Bills
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH["Bills"]);
+    });
+
+    test("When API POST fails with 500, Then console.error should be called", async () => {
+      // Given
+      console.error = jest.fn();
+      window.alert = jest.fn();
+      document.body.innerHTML = NewBillUI();
+      const onNavigate = jest.fn();
+      const store500 = {
+        bills: () => ({
+          ...mockStore.bills(),
+          create: () => Promise.reject(new Error("Erreur 500")),
+        }),
+      };
+      initNewBillPage({
+        document,
+        onNavigate,
+        store: store500,
+        localStorage: window.localStorage,
+      });
+
+      // When
+      const fileInput = screen.getByTestId("file");
+      const file = new File(["content"], "ticket.png", { type: "image/png" });
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Then
+      expect(console.error).toHaveBeenCalled();
+    });
   });
 });

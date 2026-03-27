@@ -51,7 +51,7 @@ describe("Given I am connected as an employee", () => {
       window.onNavigate(ROUTES_PATH.Bills);
       await waitFor(() => screen.getByTestId("icon-window"));
       const windowIcon = screen.getByTestId("icon-window");
-      //to-do write expect expression
+      expect(windowIcon.classList).toContain("active-icon");
     });
     test("Then bills should be ordered from earliest to latest", () => {
       document.body.innerHTML = BillsUI({ data: bills });
@@ -98,6 +98,55 @@ describe("Given I am connected as an employee", () => {
           expect(img.getAttribute("src")).toBe(billUrl);
         });
       }
+    });
+  });
+});
+
+// Test d'intégration GET Bills
+describe("Given I am a user connected as Employee", () => {
+  describe("When I navigate to Bills page", () => {
+    test("Then bills are fetched from mock API GET and displayed", async () => {
+      // Given
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({ type: "Employee", email: "employee@test.tld" }),
+      );
+
+      // When - fetch bills from mock store then render
+      const data = await getBills(store);
+      document.body.innerHTML = BillsUI({ data });
+
+      // Then - bills are displayed
+      await waitFor(() => screen.getByText("Mes notes de frais"));
+      expect(screen.getByText("Mes notes de frais")).toBeTruthy();
+      expect(data).toHaveLength(4);
+    });
+
+    test("When API fails with 404 error, Then an error should be thrown", async () => {
+      // Given
+      const store404 = {
+        bills: () => ({
+          list: () => Promise.reject(new Error("Erreur 404")),
+        }),
+      };
+
+      // When / Then
+      await expect(getBills(store404)).rejects.toThrow("Erreur 404");
+    });
+
+    test("When API fails with 500 error, Then an error should be thrown", async () => {
+      // Given
+      const store500 = {
+        bills: () => ({
+          list: () => Promise.reject(new Error("Erreur 500")),
+        }),
+      };
+
+      // When / Then
+      await expect(getBills(store500)).rejects.toThrow("Erreur 500");
     });
   });
 });
