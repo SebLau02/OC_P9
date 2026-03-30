@@ -181,13 +181,18 @@ describe("Given I am connected as an employee and I am on NewBill Page", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(console.error).toHaveBeenCalled();
   });
-  test("Then I should be able to submit a new bill", () => {
+
+  test("Then I should be able to submit a new bill", async () => {
+    const onNavigate = jest.fn();
     updateBill(bills[0], {
       billId: bills[0].id,
       store: mockStore,
-      onNavigate: jest.fn(),
+      onNavigate,
     });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH["Bills"]);
   });
+
   test("Then I should show console error when update store bill fails", async () => {
     const errorStore = {
       bills: () => ({
